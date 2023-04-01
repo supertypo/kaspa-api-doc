@@ -1,0 +1,69 @@
+#
+# This is an example of running the "full stack" Kaspa REST+WS API.
+# It will retain the full block and transaction history from the point in time it is started.
+#
+# https://github.com/supertypo/kaspa-api-doc
+#
+version: "3"
+
+services:
+
+  kaspa_rest_server:
+    image: supertypo/kaspa-rest-server:latest
+    restart: unless-stopped
+    environment:
+      KASPAD_HOST_1: kaspad:16110
+      SQL_URI: postgresql+asyncpg://postgres:mysecretpassword@kaspa_db:5432/postgres
+    ports:
+      - "8000:8000"
+    links:
+      - kaspad
+      - kaspa_db
+
+  kaspa_socket_server:
+    image: lamer1/kaspa-socket-server:latest
+    restart: unless-stopped
+    environment:
+      KASPAD_HOST_1: kaspad:16110
+      SQL_URI: postgresql+asyncpg://postgres:mysecretpassword@kaspa_db:5432/postgres
+    ports:
+      - "8001:8001"
+    links:
+      - kaspad
+      - kaspa_db
+
+  kaspa_db_filler:
+    image: supertypo/kaspa-db-filler:latest
+    restart: unless-stopped
+    environment:
+      DEBUG: "true"
+      KASPAD_HOST_1: kaspad:16110
+      SQL_URI: postgresql://postgres:mysecretpassword@kaspa_db:5432/postgres
+    links:
+      - kaspad
+      - kaspa_db
+
+  kaspad:
+    image: supertypo/kaspad:latest
+    restart: unless-stopped
+    ports:
+      - "16110:16110/tcp" # RPC - consider removing
+      - "16111:16111/tcp"
+    volumes:
+      - kaspad:/app/data/
+
+  kaspa_db:
+    image: postgres:14-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432/tcp"
+    volumes:
+      - kaspa_db:/var/lib/postgresql/data/
+
+volumes:
+  kaspad:
+  kaspa_db:
