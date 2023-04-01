@@ -1,0 +1,41 @@
+#
+# This is an example of running the "light" Kaspa REST+WS API.
+# This setup will only retain transactions history back to the pruning point (last ~3 days)
+#
+# https://github.com/supertypo/kaspa-api-doc
+#
+version: "3"
+
+services:
+
+  kaspa_rest_server:
+    image: supertypo/kaspa-rest-server:latest
+    restart: unless-stopped
+    environment:
+      KASPAD_HOST_1: kaspad:16110
+    ports:
+      - "8000:8000"
+    links:
+      - kaspad
+
+  kaspa_socket_server:
+    image: lamer1/kaspa-socket-server:latest
+    restart: unless-stopped
+    environment:
+      KASPAD_HOST_1: kaspad:16110
+    ports:
+      - "8001:8001"
+    links:
+      - kaspad
+
+  kaspad:
+    image: supertypo/kaspad:latest
+    restart: unless-stopped
+    ports:
+      - "16110:16110/tcp" # RPC - consider removing
+      - "16111:16111/tcp"
+    volumes:
+      - kaspad:/app/data/
+
+volumes:
+  kaspad:
